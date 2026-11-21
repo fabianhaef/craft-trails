@@ -57,8 +57,10 @@ class Rfc3161AnchorBackend implements AnchorBackendInterface
         // version INTEGER v1 = 1
         $version = self::derInteger(1);
 
-        // Random nonce (8 bytes)
-        $nonceBytes = random_bytes(8);
+        // Random nonce. 7 bytes (56 bits), not 8: hexdec() of a full 8-byte
+        // value is sometimes > PHP_INT_MAX and comes back as a float, which
+        // the (int) cast below would then silently truncate.
+        $nonceBytes = random_bytes(7);
         $nonceInt = hexdec(bin2hex($nonceBytes));
         $nonce = self::derInteger((int) $nonceInt);
 
