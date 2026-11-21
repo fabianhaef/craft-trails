@@ -111,7 +111,7 @@ class LogsController extends BaseCpController
         $canViewPii = $currentUser && ($currentUser->admin || $currentUser->can('trails-manageSettings'));
 
         return $this->renderTemplate('trails/logs/view', [
-            'log' => $log,
+            'log' => $audit->toTemplateArray($log),
             'decryptedEmail' => $decryptedEmail,
             'metadata' => $metadata,
             'oldValue' => $oldValue,
@@ -120,8 +120,8 @@ class LogsController extends BaseCpController
             'hashValid' => $audit->verifyLogIntegrity($log),
             'elementUrl' => $elementUrl,
             'canViewPii' => $canViewPii,
-            'prevLog' => $prevLog,
-            'nextLog' => $nextLog,
+            'prevLog' => $prevLog ? $audit->toTemplateArray($prevLog) : null,
+            'nextLog' => $nextLog ? $audit->toTemplateArray($nextLog) : null,
         ]);
     }
 }

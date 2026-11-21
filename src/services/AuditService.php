@@ -1014,7 +1014,21 @@ class AuditService extends Component
         if (!empty($criteria['offset'])) {
             $query->offset($criteria['offset']);
         }
-        return $query->all();
+        return array_map($this->toTemplateArray(...), $query->all());
+    }
+
+    /**
+     * Converts a record to a plain array for safe Twig access. Craft 6's Twig
+     * bridge only fast-paths its own new base classes; a legacy Yii
+     * ActiveRecord falls through to Twig's native attribute resolution, which
+     * tries a bare method call first and throws via __call() for any
+     * null-valued attribute. A plain array sidesteps that entirely.
+     */
+    public function toTemplateArray(AuditLogRecord $record): array
+    {
+        $data = $record->toArray();
+        $data['decodedMetadata'] = $record->metadata ? json_decode($record->metadata, true) : null;
+        return $data;
     }
 
     public function countLogs(array $criteria = []): int
