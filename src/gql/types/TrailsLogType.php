@@ -4,9 +4,10 @@ namespace anvildev\trails\gql\types;
 
 use craft\gql\base\ObjectType;
 use craft\gql\GqlEntityRegistry;
+use CraftCms\Cms\Gql\Contracts\SingularTypeInterface;
 use GraphQL\Type\Definition\Type;
 
-class TrailsLogType extends ObjectType
+class TrailsLogType extends ObjectType implements SingularTypeInterface
 {
     public static function getName(): string
     {
