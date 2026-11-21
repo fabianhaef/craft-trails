@@ -5,9 +5,10 @@ namespace anvildev\trails\mcp;
 use anvildev\trails\dto\AuditLogEntry;
 use anvildev\trails\mcp\support\Presenter;
 use anvildev\trails\Trails;
+use craft\mcp\attributes\RequiresPermission;
+use CraftCms\Cms\Mcp\Attributes\RequiresPermission as NativeRequiresPermission;
 use Mcp\Capability\Attribute\McpTool;
 use Mcp\Schema\ToolAnnotations;
-use craft\mcp\attributes\RequiresPermission;
 use stimmt\craft\Mcp\attributes\McpToolMeta;
 use stimmt\craft\Mcp\enums\ToolCategory;
 
@@ -85,6 +86,7 @@ class AuditLogTools
     )]
     #[McpToolMeta(category: ToolCategory::PLUGIN)]
     #[RequiresPermission('trails-viewLogs')]
+    #[NativeRequiresPermission('trails-viewLogs')]
     public function searchLogs(
         ?string $event = null,
         ?string $category = null,
@@ -127,6 +129,7 @@ class AuditLogTools
     )]
     #[McpToolMeta(category: ToolCategory::PLUGIN)]
     #[RequiresPermission('trails-viewLogs')]
+    #[NativeRequiresPermission('trails-viewLogs')]
     public function getLog(int $id): array
     {
         return $this->guard(function() use ($id): array {
@@ -151,6 +154,7 @@ class AuditLogTools
     )]
     #[McpToolMeta(category: ToolCategory::PLUGIN)]
     #[RequiresPermission('trails-viewLogs')]
+    #[NativeRequiresPermission('trails-viewLogs')]
     public function countLogs(
         ?string $event = null,
         ?string $category = null,
@@ -181,6 +185,7 @@ class AuditLogTools
     )]
     #[McpToolMeta(category: ToolCategory::PLUGIN)]
     #[RequiresPermission('trails-viewLogs')]
+    #[NativeRequiresPermission('trails-viewLogs')]
     public function eventTypes(): array
     {
         return $this->guard(static fn(): array => [
@@ -198,6 +203,7 @@ class AuditLogTools
     )]
     #[McpToolMeta(category: ToolCategory::PLUGIN)]
     #[RequiresPermission('trails-viewLogs')]
+    #[NativeRequiresPermission('trails-viewLogs')]
     public function categories(): array
     {
         return $this->guard(static fn(): array => [

@@ -3,9 +3,10 @@
 namespace anvildev\trails\mcp;
 
 use anvildev\trails\Trails;
+use craft\mcp\attributes\RequiresPermission;
+use CraftCms\Cms\Mcp\Attributes\RequiresPermission as NativeRequiresPermission;
 use Mcp\Capability\Attribute\McpTool;
 use Mcp\Schema\ToolAnnotations;
-use craft\mcp\attributes\RequiresPermission;
 use stimmt\craft\Mcp\attributes\McpToolMeta;
 use stimmt\craft\Mcp\enums\ToolCategory;
 
@@ -28,6 +29,7 @@ class ActivityTools
     )]
     #[McpToolMeta(category: ToolCategory::PLUGIN)]
     #[RequiresPermission('trails-viewLogs')]
+    #[NativeRequiresPermission('trails-viewLogs')]
     public function activitySummary(int $days = 7): array
     {
         return $this->guard(static fn(): array => [
@@ -46,6 +48,7 @@ class ActivityTools
     )]
     #[McpToolMeta(category: ToolCategory::PLUGIN)]
     #[RequiresPermission('trails-viewLogs')]
+    #[NativeRequiresPermission('trails-viewLogs')]
     public function dailyActivity(int $days = 7): array
     {
         return $this->guard(static fn(): array => [
@@ -63,6 +66,7 @@ class ActivityTools
     )]
     #[McpToolMeta(category: ToolCategory::PLUGIN)]
     #[RequiresPermission('trails-viewLogs')]
+    #[NativeRequiresPermission('trails-viewLogs')]
     public function retentionStats(): array
     {
         return $this->guard(static fn(): array => [

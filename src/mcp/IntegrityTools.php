@@ -3,9 +3,10 @@
 namespace anvildev\trails\mcp;
 
 use anvildev\trails\Trails;
+use craft\mcp\attributes\RequiresPermission;
+use CraftCms\Cms\Mcp\Attributes\RequiresPermission as NativeRequiresPermission;
 use Mcp\Capability\Attribute\McpTool;
 use Mcp\Schema\ToolAnnotations;
-use craft\mcp\attributes\RequiresPermission;
 use stimmt\craft\Mcp\attributes\McpToolMeta;
 use stimmt\craft\Mcp\enums\ToolCategory;
 
@@ -39,6 +40,7 @@ class IntegrityTools
     )]
     #[McpToolMeta(category: ToolCategory::PLUGIN)]
     #[RequiresPermission('trails-viewLogs')]
+    #[NativeRequiresPermission('trails-viewLogs')]
     public function verifyLogs(int $batchSize = 500): array
     {
         return $this->guard(static fn(): array => [
@@ -56,6 +58,7 @@ class IntegrityTools
     )]
     #[McpToolMeta(category: ToolCategory::PLUGIN)]
     #[RequiresPermission('trails-viewLogs')]
+    #[NativeRequiresPermission('trails-viewLogs')]
     public function verifyChain(int $batchSize = 500): array
     {
         return $this->guard(static fn(): array => [
@@ -73,6 +76,7 @@ class IntegrityTools
     )]
     #[McpToolMeta(category: ToolCategory::PLUGIN)]
     #[RequiresPermission('trails-viewLogs')]
+    #[NativeRequiresPermission('trails-viewLogs')]
     public function verifyMerkleRoots(): array
     {
         return $this->guard(static fn(): array => [
@@ -90,6 +94,7 @@ class IntegrityTools
     )]
     #[McpToolMeta(category: ToolCategory::PLUGIN)]
     #[RequiresPermission('trails-viewLogs')]
+    #[NativeRequiresPermission('trails-viewLogs')]
     public function verifyAnchors(): array
     {
         return $this->guard(static fn(): array => [
@@ -108,6 +113,7 @@ class IntegrityTools
     )]
     #[McpToolMeta(category: ToolCategory::PLUGIN)]
     #[RequiresPermission('trails-viewLogs')]
+    #[NativeRequiresPermission('trails-viewLogs')]
     public function inclusionProof(int $chainPosition): array
     {
         return $this->guard(function() use ($chainPosition): array {
@@ -136,6 +142,7 @@ class IntegrityTools
     )]
     #[McpToolMeta(category: ToolCategory::PLUGIN)]
     #[RequiresPermission('trails-viewLogs')]
+    #[NativeRequiresPermission('trails-viewLogs')]
     public function certificate(string $fromDate, string $toDate, string $format = 'json'): array
     {
         return $this->guard(static fn(): array => [
