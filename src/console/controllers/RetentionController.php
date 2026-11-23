@@ -13,7 +13,7 @@ class RetentionController extends Controller
     public function options($actionID): array
     {
         $options = parent::options($actionID);
-        if ($actionID === 'cleanup') {
+        if ($actionID === 'cleanup' || $actionID === 'purge') {
             $options[] = 'force';
         }
         return $options;
