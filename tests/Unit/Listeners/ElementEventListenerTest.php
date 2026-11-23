@@ -26,7 +26,6 @@ class ElementEventListenerTest extends TestCase
         $listener = new ElementEventListener($audit, $settings);
 
         $method = new \ReflectionMethod($listener, 'isElementIncluded');
-        $method->setAccessible(true);
 
         // Suppress PHP 8.4 deprecation warnings triggered during Mockery proxy class generation
         // for Craft CMS elements that have implicit nullable parameters.
@@ -46,7 +45,6 @@ class ElementEventListenerTest extends TestCase
         $listener = new ElementEventListener($audit, $settings);
 
         $method = new \ReflectionMethod($listener, 'calculateFieldChanges');
-        $method->setAccessible(true);
 
         $old = ['title' => 'Old Title', 'slug' => 'old', 'enabled' => true, 'fields' => ['body' => 'old text']];
         $new = ['title' => 'New Title', 'slug' => 'old', 'enabled' => true, 'fields' => ['body' => 'new text']];
@@ -66,7 +64,6 @@ class ElementEventListenerTest extends TestCase
         $listener = new ElementEventListener($audit, $settings);
 
         $method = new \ReflectionMethod($listener, 'calculateFieldChanges');
-        $method->setAccessible(true);
 
         $snapshot = ['title' => 'Same', 'slug' => 'same', 'enabled' => true];
         $result = $method->invoke($listener, $snapshot, $snapshot);

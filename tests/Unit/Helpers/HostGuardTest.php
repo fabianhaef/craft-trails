@@ -6,6 +6,7 @@ namespace anvildev\trails\tests\Unit\Helpers;
 
 use anvildev\trails\helpers\HostGuard;
 use anvildev\trails\tests\Support\TestCase;
+use PHPUnit\Framework\Attributes\DataProvider;
 
 class HostGuardTest extends TestCase
 {
@@ -75,8 +76,8 @@ class HostGuardTest extends TestCase
      * FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE alone is incomplete
      * (it misses 0.0.0.0/8, 100.64.0.0/10 CGNAT, 198.18/15 benchmarking, etc.).
      *
-     * @dataProvider reservedIpv4Provider
      */
+    #[DataProvider('reservedIpv4Provider')]
     public function testBlocksAllReservedIpv4Ranges(string $ip): void
     {
         $this->assertTrue(
@@ -106,9 +107,7 @@ class HostGuardTest extends TestCase
         ];
     }
 
-    /**
-     * @dataProvider publicIpv4Provider
-     */
+    #[DataProvider('publicIpv4Provider')]
     public function testAllowsPublicIpv4(string $ip): void
     {
         $this->assertFalse(

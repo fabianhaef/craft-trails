@@ -42,7 +42,6 @@ class ExportServiceTest extends TestCase
     private function invokeEscapeCsvField(mixed $value): string
     {
         $method = new \ReflectionMethod(ExportService::class, 'escapeCsvField');
-        $method->setAccessible(true);
         return $method->invoke(new ExportService(), $value);
     }
 

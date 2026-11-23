@@ -4,6 +4,7 @@ namespace anvildev\trails\tests\Unit\Services;
 
 use anvildev\trails\services\AuditService;
 use anvildev\trails\tests\Support\TestCase;
+use PHPUnit\Framework\Attributes\DataProvider;
 use ReflectionMethod;
 
 class AuditServiceTest extends TestCase
@@ -23,7 +24,6 @@ class AuditServiceTest extends TestCase
     public function testGetCategoryFromElementEvent(): void
     {
         $method = new ReflectionMethod(AuditService::class, 'getCategoryFromEvent');
-        $method->setAccessible(true);
 
         $this->assertEquals('element', $method->invoke($this->service, 'element.created'));
         $this->assertEquals('element', $method->invoke($this->service, 'element.updated'));
@@ -34,7 +34,6 @@ class AuditServiceTest extends TestCase
     public function testGetCategoryFromUserEvent(): void
     {
         $method = new ReflectionMethod(AuditService::class, 'getCategoryFromEvent');
-        $method->setAccessible(true);
 
         $this->assertEquals('user', $method->invoke($this->service, 'user.login'));
         $this->assertEquals('user', $method->invoke($this->service, 'user.logout'));
@@ -44,7 +43,6 @@ class AuditServiceTest extends TestCase
     public function testGetCategoryFromAssetEvent(): void
     {
         $method = new ReflectionMethod(AuditService::class, 'getCategoryFromEvent');
-        $method->setAccessible(true);
 
         $this->assertEquals('asset', $method->invoke($this->service, 'asset.uploaded'));
         $this->assertEquals('asset', $method->invoke($this->service, 'asset.replaced'));
@@ -53,7 +51,6 @@ class AuditServiceTest extends TestCase
     public function testGetCategoryFromConfigEvent(): void
     {
         $method = new ReflectionMethod(AuditService::class, 'getCategoryFromEvent');
-        $method->setAccessible(true);
 
         $this->assertEquals('config', $method->invoke($this->service, 'config.changed'));
     }
@@ -61,7 +58,6 @@ class AuditServiceTest extends TestCase
     public function testGetCategoryFromCustomEvent(): void
     {
         $method = new ReflectionMethod(AuditService::class, 'getCategoryFromEvent');
-        $method->setAccessible(true);
 
         $this->assertEquals('payment', $method->invoke($this->service, 'payment.processed'));
         $this->assertEquals('custom', $method->invoke($this->service, 'custom.myevent'));
@@ -70,7 +66,6 @@ class AuditServiceTest extends TestCase
     public function testGetCategoryFromEventWithNoDot(): void
     {
         $method = new ReflectionMethod(AuditService::class, 'getCategoryFromEvent');
-        $method->setAccessible(true);
 
         $this->assertEquals('general', $method->invoke($this->service, 'general'));
     }
@@ -82,7 +77,6 @@ class AuditServiceTest extends TestCase
     public function testAnonymizeIpV4ZerosLastTwoOctets(): void
     {
         $method = new ReflectionMethod(AuditService::class, 'anonymizeIpAddress');
-        $method->setAccessible(true);
 
         $this->assertEquals('192.168.0.0', $method->invoke($this->service, '192.168.1.42'));
         $this->assertEquals('10.0.0.0', $method->invoke($this->service, '10.0.0.255'));
@@ -92,7 +86,6 @@ class AuditServiceTest extends TestCase
     public function testAnonymizeIpV6ZerosLast5Segments(): void
     {
         $method = new ReflectionMethod(AuditService::class, 'anonymizeIpAddress');
-        $method->setAccessible(true);
 
         $result = $method->invoke($this->service, '2001:0db8:85a3:0000:0000:8a2e:0370:7334');
         $this->assertEquals('2001:0db8:85a3:0000:0000:0000:0000:0000', $result);
@@ -101,7 +94,6 @@ class AuditServiceTest extends TestCase
     public function testAnonymizeIpV6PreservesFirst3SegmentsOnly(): void
     {
         $method = new ReflectionMethod(AuditService::class, 'anonymizeIpAddress');
-        $method->setAccessible(true);
 
         $result = $method->invoke($this->service, 'fe80:1234:5678:9abc:def0:1111:2222:3333');
         $parts = explode(':', $result);
@@ -122,7 +114,6 @@ class AuditServiceTest extends TestCase
     public function testAnonymizeInvalidIpReturnsUnchanged(): void
     {
         $method = new ReflectionMethod(AuditService::class, 'anonymizeIpAddress');
-        $method->setAccessible(true);
 
         $this->assertEquals('not-an-ip', $method->invoke($this->service, 'not-an-ip'));
     }
@@ -141,9 +132,7 @@ class AuditServiceTest extends TestCase
     // assertValidEventType()
     // =========================================================================
 
-    /**
-     * @dataProvider validEventTypeProvider
-     */
+    #[DataProvider('validEventTypeProvider')]
     public function testAssertValidEventTypeAcceptsValidFormats(string $type): void
     {
         // Should not throw
@@ -162,9 +151,7 @@ class AuditServiceTest extends TestCase
         ];
     }
 
-    /**
-     * @dataProvider invalidEventTypeProvider
-     */
+    #[DataProvider('invalidEventTypeProvider')]
     public function testAssertValidEventTypeRejectsInvalidFormats(string $type): void
     {
         $this->expectException(\InvalidArgumentException::class);
@@ -248,9 +235,7 @@ class AuditServiceTest extends TestCase
     // logCustomEvent() — reserved prefix validation
     // =========================================================================
 
-    /**
-     * @dataProvider reservedPrefixProvider
-     */
+    #[DataProvider('reservedPrefixProvider')]
     public function testLogCustomEventRejectsReservedPrefixes(string $eventType): void
     {
         $this->expectException(\InvalidArgumentException::class);

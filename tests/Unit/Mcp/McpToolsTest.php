@@ -7,6 +7,7 @@ use anvildev\trails\mcp\ActivityTools;
 use anvildev\trails\mcp\AuditLogTools;
 use anvildev\trails\mcp\IntegrityTools;
 use anvildev\trails\mcp\support\Presenter;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use ReflectionClass;
 
@@ -39,10 +40,10 @@ class McpToolsTest extends TestCase
     ];
 
     /**
-     * @dataProvider toolClassProvider
      * @param class-string $class
      * @param list<string> $expected
      */
+    #[DataProvider('toolClassProvider')]
     public function testToolClassDeclaresExpectedTools(string $class, array $expected): void
     {
         $declared = $this->declaredToolNames($class);
