@@ -81,9 +81,20 @@ class Trails extends Plugin
         Craft::setAlias('@trails', $this->getBasePath());
 
         $this->registerEventListeners();
-        $this->registerBuiltInBridges();
         $this->eventBridge->bindAll();
         $this->registerMcpTools();
+
+        // Craft 6 doesn't finish registering plugins in the by-handle lookup
+        // (Craft::$app->getPlugins()->getPlugin()) until after every plugin's
+        // own init() has run, so Booked/Commerce aren't found yet if looked up
+        // synchronously here. Defer to afterLoadPlugins, which fires once all
+        // plugins (Craft 5 natively, Craft 6 via the adapter's app()->booted()
+        // bridge) have finished loading. bindAll() above already set `bound`,
+        // so each listen() call below self-binds immediately — no second
+        // bindAll() needed.
+        Event::on(\craft\services\Plugins::class, \craft\services\Plugins::EVENT_AFTER_LOAD_PLUGINS, function() {
+            $this->registerBuiltInBridges();
+        });
 
         Event::on(UrlManager::class, UrlManager::EVENT_REGISTER_CP_URL_RULES, function(RegisterUrlRulesEvent $event) {
             $event->rules += [
