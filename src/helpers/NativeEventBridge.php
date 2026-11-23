@@ -13,9 +13,12 @@ namespace anvildev\trails\helpers;
  */
 class NativeEventBridge
 {
+    /** @var array<string, bool> */
+    private static array $existsCache = [];
+
     public static function listen(string $eventClass, callable $listener): void
     {
-        if (!class_exists($eventClass)) {
+        if (!(self::$existsCache[$eventClass] ??= class_exists($eventClass))) {
             return;
         }
 

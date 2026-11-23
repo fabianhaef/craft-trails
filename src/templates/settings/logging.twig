@@ -71,6 +71,14 @@
             instructions: 'Log asset uploads, replacements, and modifications.'|t('trails')
         }) }}
 
+        {{ forms.lightswitchField({
+            label: 'Workflow Events'|t('trails'),
+            id: 'logWorkflowEvents',
+            name: 'logWorkflowEvents',
+            on: settings.logWorkflowEvents,
+            instructions: 'Log content-approval workflow submissions, approvals, rejections, overrides, and review comments. Craft 6 only.'|t('trails')
+        }) }}
+
         <hr>
 
         <h2>{{ 'Exclusions'|t('trails') }}</h2>

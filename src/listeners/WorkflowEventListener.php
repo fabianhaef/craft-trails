@@ -5,6 +5,7 @@ namespace anvildev\trails\listeners;
 use anvildev\trails\helpers\NativeEventBridge;
 use anvildev\trails\models\Settings;
 use anvildev\trails\services\AuditService;
+use craft\elements\Entry;
 use CraftCms\Cms\Element\Contracts\ElementInterface;
 use CraftCms\Cms\User\Contracts\CraftUser;
 use CraftCms\Cms\Workflow\Events\WorkflowCommented;
@@ -33,6 +34,10 @@ class WorkflowEventListener
         }
 
         NativeEventBridge::listen(WorkflowTransitioned::class, function(WorkflowTransitioned $event) {
+            if (!$this->isLoggable($event->draft)) {
+                return;
+            }
+
             $this->logWorkflowEvent(
                 'workflow.' . $event->transition->value,
                 $event->draft,
@@ -48,6 +53,10 @@ class WorkflowEventListener
         });
 
         NativeEventBridge::listen(WorkflowCommented::class, function(WorkflowCommented $event) {
+            if (!$this->isLoggable($event->draft)) {
+                return;
+            }
+
             $this->logWorkflowEvent(
                 'workflow.commented',
                 $event->draft,
@@ -57,6 +66,26 @@ class WorkflowEventListener
                 ['stage' => $event->stage->name]
             );
         });
+    }
+
+    private function isLoggable(ElementInterface $draft): bool
+    {
+        foreach ($this->settings->excludedElementTypes as $excluded) {
+            if (is_a($draft, $excluded)) {
+                return false;
+            }
+        }
+
+        if (
+            $draft instanceof Entry
+            && $this->settings->excludedSections
+            && ($section = $draft->getSection())
+            && in_array($section->handle, $this->settings->excludedSections, true)
+        ) {
+            return false;
+        }
+
+        return true;
     }
 
     /**
@@ -74,7 +103,7 @@ class WorkflowEventListener
 
         $this->audit->log(
             $eventType,
-            get_class($draft),
+            $draft::class,
             $draft->id ?? null,
             array_merge([
                 'title' => $draft->title ?? null,

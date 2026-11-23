@@ -27,7 +27,7 @@ class AuditService extends Component
     public const MAX_CUSTOM_METADATA_BYTES = 65536; // 64 KB
 
     public const RESERVED_PREFIXES = [
-        'element.', 'user.', 'asset.', 'config.', 'audit.', 'trails.', 'auth.',
+        'element.', 'user.', 'asset.', 'config.', 'audit.', 'trails.', 'auth.', 'workflow.',
     ];
 
     /** @event AuditEvent Fired after an audit log is saved. */
