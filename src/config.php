@@ -23,6 +23,7 @@ return [
         // 'logConfigChanges' => true,
         // 'logAssets' => true,
         // 'logPermissionChanges' => true,
+        // 'logWorkflowEvents' => true,
 
         // Capture
         // 'captureIpAddress' => true,

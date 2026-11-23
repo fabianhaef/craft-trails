@@ -16,6 +16,7 @@ use anvildev\trails\listeners\BookedEventListener;
 use anvildev\trails\listeners\CommerceEventListener;
 use anvildev\trails\listeners\ElementEventListener;
 use anvildev\trails\listeners\SystemEventListener;
+use anvildev\trails\listeners\WorkflowEventListener;
 use anvildev\trails\models\Settings;
 use anvildev\trails\services\AuditService;
 use anvildev\trails\services\EventBridgeService;
@@ -321,6 +322,7 @@ class Trails extends Plugin
         (new ElementEventListener($this->audit, $settings))->register();
         (new AuthEventListener($this->audit, $settings))->register();
         (new SystemEventListener($this->audit, $settings))->register();
+        (new WorkflowEventListener($this->audit, $settings))->register();
     }
 
     public function getCpNavItem(): ?array

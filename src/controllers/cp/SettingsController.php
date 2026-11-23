@@ -70,7 +70,7 @@ class SettingsController extends BaseCpController
         $settings = Trails::getInstance()->getSettings();
 
         $paramTypes = [
-            'bool' => ['enabled', 'logElements', 'logAuthentication', 'logFailedLogins', 'logPermissionChanges', 'logConfigChanges', 'logAssets', 'captureIpAddress', 'captureUserAgent', 'captureFieldChanges', 'anonymizeIp', 'alertsEnabled', 'externalLoggingEnabled', 'scheduledRetention', 'enableGeoIp', 'enableApi', 'enableGraphql'],
+            'bool' => ['enabled', 'logElements', 'logAuthentication', 'logFailedLogins', 'logPermissionChanges', 'logConfigChanges', 'logAssets', 'logWorkflowEvents', 'captureIpAddress', 'captureUserAgent', 'captureFieldChanges', 'anonymizeIp', 'alertsEnabled', 'externalLoggingEnabled', 'scheduledRetention', 'enableGeoIp', 'enableApi', 'enableGraphql'],
             'int' => ['retentionDays', 'failedLoginThreshold', 'logRateLimit', 'alertCooldownMinutes', 'merkleBatchSize', 'externalBatchSize', 'apiRateLimit', 'maxSseConnections'],
             'string' => ['alertEmail', 'externalProvider', 'externalEndpoint', 'externalApiKey', 'webhookSecret', 'geoIpEndpoint', 'anchorType', 's3Bucket', 's3Region', 's3AccessKeyId', 's3SecretAccessKey', 'tsaUrl', 'tsaTrustedCaBundle', 'tsaCaBundlePem', 'realtime'],
             'array' => ['excludedElementTypes', 'excludedSections', 'alertEvents'],

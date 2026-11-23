@@ -15,6 +15,9 @@ class Settings extends Model
     public bool $logConfigChanges = true;
     public bool $logAssets = true;
     public bool $logPermissionChanges = true;
+    // Craft 6 only (CraftCms\Cms\Workflow, since 6.0.0) — no-op on Craft 5,
+    // which never dispatches these events at all.
+    public bool $logWorkflowEvents = true;
     public array $excludedElementTypes = [];
     public array $excludedSections = [];
 
@@ -36,6 +39,7 @@ class Settings extends Model
         'user.login.failed',
         'element.deleted',
         'user.permissions.changed',
+        'workflow.override',
     ];
     public int $failedLoginThreshold = 5;
     public int $alertCooldownMinutes = 60;
@@ -104,7 +108,7 @@ class Settings extends Model
     public function defineRules(): array
     {
         return [
-            [['enabled', 'logElements', 'logAuthentication', 'logFailedLogins', 'logConfigChanges', 'logAssets', 'logPermissionChanges', 'scheduledRetention'], 'boolean'],
+            [['enabled', 'logElements', 'logAuthentication', 'logFailedLogins', 'logConfigChanges', 'logAssets', 'logPermissionChanges', 'logWorkflowEvents', 'scheduledRetention'], 'boolean'],
             [['captureIpAddress', 'captureUserAgent', 'captureFieldChanges', 'anonymizeIp'], 'boolean'],
             [['alertsEnabled', 'externalLoggingEnabled'], 'boolean'],
             [['retentionDays', 'failedLoginThreshold', 'logRateLimit'], 'integer', 'min' => 0],
