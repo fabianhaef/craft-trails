@@ -2,16 +2,21 @@
 
 namespace anvildev\trails\listeners;
 
+use anvildev\trails\helpers\NativeEventBridge;
 use anvildev\trails\models\Settings;
 use anvildev\trails\services\AuditService;
+use CraftCms\Cms\Element\Contracts\ElementInterface;
+use CraftCms\Cms\User\Contracts\CraftUser;
+use CraftCms\Cms\Workflow\Events\WorkflowCommented;
+use CraftCms\Cms\Workflow\Events\WorkflowTransitioned;
+use CraftCms\Cms\Workflow\Models\WorkflowRun;
 
 /**
  * Craft 6's native content-approval workflow system
  * (`CraftCms\Cms\Workflow`, since 6.0.0) has no Craft 5 equivalent and no
  * legacy adapter bridge — it dispatches its own Laravel events directly,
- * so there's nothing to fall back to on Craft 5. The `class_exists()`
- * guard below keeps this inert there, since Craft 5 never autoloads these
- * classes at all.
+ * so there's nothing to fall back to on Craft 5. NativeEventBridge keeps
+ * this inert there, since Craft 5 never autoloads these classes at all.
  */
 class WorkflowEventListener
 {
@@ -27,58 +32,57 @@ class WorkflowEventListener
             return;
         }
 
-        if (!class_exists(\CraftCms\Cms\Workflow\Events\WorkflowTransitioned::class)) {
-            return;
-        }
+        NativeEventBridge::listen(WorkflowTransitioned::class, function(WorkflowTransitioned $event) {
+            $this->logWorkflowEvent(
+                'workflow.' . $event->transition->value,
+                $event->draft,
+                $event->run,
+                $event->actor,
+                $event->note,
+                [
+                    'workflowId' => $event->run->workflowId,
+                    'currentStage' => $event->run->currentStage,
+                    'status' => $event->run->status?->value,
+                ]
+            );
+        });
 
-        $events = \Illuminate\Support\Facades\Event::class;
+        NativeEventBridge::listen(WorkflowCommented::class, function(WorkflowCommented $event) {
+            $this->logWorkflowEvent(
+                'workflow.commented',
+                $event->draft,
+                $event->run,
+                $event->actor,
+                $event->note,
+                ['stage' => $event->stage->name]
+            );
+        });
+    }
 
-        $events::listen(
-            \CraftCms\Cms\Workflow\Events\WorkflowTransitioned::class,
-            function(\CraftCms\Cms\Workflow\Events\WorkflowTransitioned $event) {
-                $draft = $event->draft;
-                $run = $event->run;
-                $actorElement = $event->actor?->asElement();
+    /**
+     * @param array<string, mixed> $extra
+     */
+    private function logWorkflowEvent(
+        string $eventType,
+        ElementInterface $draft,
+        WorkflowRun $run,
+        ?CraftUser $actor,
+        ?string $note,
+        array $extra = [],
+    ): void {
+        $actorElement = $actor?->asElement();
 
-                $this->audit->log(
-                    'workflow.' . $event->transition->value,
-                    get_class($draft),
-                    $draft->id ?? null,
-                    [
-                        'title' => $draft->title ?? null,
-                        'actorUsername' => $actorElement?->username,
-                        'actorEmail' => $actorElement?->email,
-                        'runId' => $run->id,
-                        'currentStage' => $run->currentStage,
-                        'status' => $run->status?->value,
-                        'workflow' => $run->workflow?->name,
-                        'note' => $event->note,
-                    ]
-                );
-            }
-        );
-
-        $events::listen(
-            \CraftCms\Cms\Workflow\Events\WorkflowCommented::class,
-            function(\CraftCms\Cms\Workflow\Events\WorkflowCommented $event) {
-                $draft = $event->draft;
-                $run = $event->run;
-                $actorElement = $event->actor->asElement();
-
-                $this->audit->log(
-                    'workflow.commented',
-                    get_class($draft),
-                    $draft->id ?? null,
-                    [
-                        'title' => $draft->title ?? null,
-                        'actorUsername' => $actorElement->username,
-                        'actorEmail' => $actorElement->email,
-                        'runId' => $run->id,
-                        'stage' => $event->stage->name,
-                        'note' => $event->note,
-                    ]
-                );
-            }
+        $this->audit->log(
+            $eventType,
+            get_class($draft),
+            $draft->id ?? null,
+            array_merge([
+                'title' => $draft->title ?? null,
+                'actorUsername' => $actorElement?->username,
+                'actorEmail' => $actorElement?->email,
+                'runId' => $run->id,
+                'note' => $note,
+            ], $extra)
         );
     }
 }

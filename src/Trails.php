@@ -216,6 +216,15 @@ class Trails extends Plugin
         Craft::info('Trails plugin loaded', __METHOD__);
     }
 
+    /**
+     * Any check for another plugin's presence (class_exists() +
+     * getPlugin()) belongs here, not inline in init() — this method only
+     * runs once every plugin's own init() has finished (see the
+     * EVENT_AFTER_LOAD_PLUGINS binding in init()). On Craft 6,
+     * getPlugin() doesn't find a plugin that's still loading, even one
+     * that loads earlier than this one, so the same check run directly
+     * from init() silently finds nothing.
+     */
     private function registerBuiltInBridges(): void
     {
         CommerceEventListener::register($this->eventBridge);

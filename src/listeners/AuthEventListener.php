@@ -2,6 +2,7 @@
 
 namespace anvildev\trails\listeners;
 
+use anvildev\trails\helpers\NativeEventBridge;
 use anvildev\trails\jobs\AnonymizeUserLogsJob;
 use anvildev\trails\models\Settings;
 use anvildev\trails\services\AuditService;
@@ -86,19 +87,13 @@ class AuthEventListener
      * Laravel's guard directly (craftAuth()->loginUsingId() / ->logout()),
      * and dispatches Illuminate\Auth\Events\Failed itself for bad
      * credentials. Bridge those native events so logging keeps working on
-     * Craft 6; the class_exists() guard keeps this inert on Craft 5, which
-     * has no Laravel dependency at all.
+     * Craft 6; NativeEventBridge keeps this inert on Craft 5, which has no
+     * Laravel dependency at all.
      */
     private function registerCraft6AuthBridge(): void
     {
-        if (!class_exists(\Illuminate\Auth\Events\Login::class)) {
-            return;
-        }
-
-        $events = \Illuminate\Support\Facades\Event::class;
-
         if ($this->settings->logAuthentication) {
-            $events::listen(\Illuminate\Auth\Events\Login::class, function(\Illuminate\Auth\Events\Login $event) {
+            NativeEventBridge::listen(\Illuminate\Auth\Events\Login::class, function(\Illuminate\Auth\Events\Login $event) {
                 $user = $event->user;
                 $this->audit->log('user.login', User::class, $user->id ?? null, [
                     'username' => $user->username ?? null,
@@ -106,7 +101,7 @@ class AuthEventListener
                 ]);
             });
 
-            $events::listen(\Illuminate\Auth\Events\Logout::class, function(\Illuminate\Auth\Events\Logout $event) {
+            NativeEventBridge::listen(\Illuminate\Auth\Events\Logout::class, function(\Illuminate\Auth\Events\Logout $event) {
                 $user = $event->user;
                 if ($user === null) {
                     return;
@@ -118,7 +113,7 @@ class AuthEventListener
         }
 
         if ($this->settings->logFailedLogins) {
-            $events::listen(\Illuminate\Auth\Events\Failed::class, function(\Illuminate\Auth\Events\Failed $event) {
+            NativeEventBridge::listen(\Illuminate\Auth\Events\Failed::class, function(\Illuminate\Auth\Events\Failed $event) {
                 $loginName = $event->credentials['loginName'] ?? $event->credentials['username'] ?? null;
                 if ($loginName === null) {
                     return;
