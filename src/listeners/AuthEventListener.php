@@ -59,6 +59,8 @@ class AuthEventListener
             });
         }
 
+        $this->registerCraft6AuthBridge();
+
         // GDPR: Anonymize user data on deletion (always active).
         // Runs async — a user with many logs would otherwise hang the delete request.
         Event::on(Elements::class, Elements::EVENT_AFTER_DELETE_ELEMENT, function(ElementEvent $event) {
@@ -75,5 +77,57 @@ class AuthEventListener
                 'description' => 'User PII anonymization queued for audit logs due to account deletion',
             ]);
         });
+    }
+
+    /**
+     * Craft 6's CP login/logout no longer routes through the legacy
+     * craft\web\User::login()/logout() the Yii events above are bound to —
+     * CraftCms\Cms\Http\Controllers\Auth\LoginController authenticates via
+     * Laravel's guard directly (craftAuth()->loginUsingId() / ->logout()),
+     * and dispatches Illuminate\Auth\Events\Failed itself for bad
+     * credentials. Bridge those native events so logging keeps working on
+     * Craft 6; the class_exists() guard keeps this inert on Craft 5, which
+     * has no Laravel dependency at all.
+     */
+    private function registerCraft6AuthBridge(): void
+    {
+        if (!class_exists(\Illuminate\Auth\Events\Login::class)) {
+            return;
+        }
+
+        $events = \Illuminate\Support\Facades\Event::class;
+
+        if ($this->settings->logAuthentication) {
+            $events::listen(\Illuminate\Auth\Events\Login::class, function(\Illuminate\Auth\Events\Login $event) {
+                $user = $event->user;
+                $this->audit->log('user.login', User::class, $user->id ?? null, [
+                    'username' => $user->username ?? null,
+                    'email' => $user->email ?? null,
+                ]);
+            });
+
+            $events::listen(\Illuminate\Auth\Events\Logout::class, function(\Illuminate\Auth\Events\Logout $event) {
+                $user = $event->user;
+                if ($user === null) {
+                    return;
+                }
+                $this->audit->log('user.logout', User::class, $user->id ?? null, [
+                    'username' => $user->username ?? null,
+                ]);
+            });
+        }
+
+        if ($this->settings->logFailedLogins) {
+            $events::listen(\Illuminate\Auth\Events\Failed::class, function(\Illuminate\Auth\Events\Failed $event) {
+                $loginName = $event->credentials['loginName'] ?? $event->credentials['username'] ?? null;
+                if ($loginName === null) {
+                    return;
+                }
+                $this->audit->log('user.login.failed', User::class, null, [
+                    'loginName' => $loginName,
+                    'reason' => 'authentication_failed',
+                ]);
+            });
+        }
     }
 }
