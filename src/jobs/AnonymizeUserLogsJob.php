@@ -11,9 +11,11 @@ use yii\db\Query;
 
 /**
  * GDPR Article 17 ("right to be forgotten") handler. Walks every non-dropped
- * partition table — active AND archives — and rewrites userName/userEmail to
- * the deletion sentinel, recomputing each row's integrity hash so the row's
- * self-check still passes.
+ * partition table — active AND archives — and rewrites userName/userEmail
+ * (plus any identical username/email PII embedded in the row's JSON
+ * `metadata` context, written by listeners such as AuthEventListener and
+ * WorkflowEventListener) to the deletion sentinel, recomputing each row's
+ * integrity hash so the row's self-check still passes.
  *
  * The hash chain breaks at each rewritten row by design: the row's new hash
  * differs from the original, so the next row's prevHash no longer links.
@@ -23,6 +25,20 @@ use yii\db\Query;
 class AnonymizeUserLogsJob extends BaseJob
 {
     private const CHUNK_SIZE = 500;
+
+    /**
+     * Keys that carry the deleted user's own username/email inside a log
+     * row's JSON `metadata` context, mapped to the sentinel each is
+     * rewritten to. Username-shaped keys use the same '[deleted]' sentinel
+     * as the top-level `userName` column; email-shaped keys are nulled out
+     * like `userEmail`.
+     */
+    private const CONTEXT_PII_SENTINELS = [
+        'username' => '[deleted]',
+        'actorUsername' => '[deleted]',
+        'email' => null,
+        'actorEmail' => null,
+    ];
 
     public int $userId = 0;
 
@@ -85,6 +101,7 @@ class AnonymizeUserLogsJob extends BaseJob
                 $newRow = $row;
                 $newRow['userName'] = '[deleted]';
                 $newRow['userEmail'] = null;
+                $newRow['metadata'] = $this->scrubMetadataPii($row['metadata'] ?? null);
                 $newHash = $plugin->audit->hashRow($newRow);
 
                 $db->createCommand()->update(
@@ -92,6 +109,7 @@ class AnonymizeUserLogsJob extends BaseJob
                     [
                         'userName' => '[deleted]',
                         'userEmail' => null,
+                        'metadata' => $newRow['metadata'],
                         'hash' => $newHash,
                     ],
                     ['id' => $row['id']]
@@ -118,5 +136,39 @@ class AnonymizeUserLogsJob extends BaseJob
     protected function defaultDescription(): ?string
     {
         return Craft::t('trails', 'Anonymizing audit logs for deleted user');
+    }
+
+    /**
+     * Rewrites any of CONTEXT_PII_SENTINELS' keys found in a row's decoded
+     * `metadata` JSON to their deletion sentinel. Returns the original
+     * string untouched when it's null, isn't a JSON object, or contains
+     * none of those keys.
+     *
+     * @param string|null $metadata The row's raw `metadata` column value.
+     */
+    private function scrubMetadataPii(?string $metadata): ?string
+    {
+        if ($metadata === null) {
+            return null;
+        }
+
+        $decoded = json_decode($metadata, true);
+        if (!is_array($decoded)) {
+            return $metadata;
+        }
+
+        $scrubbed = false;
+        foreach (self::CONTEXT_PII_SENTINELS as $key => $sentinel) {
+            if (array_key_exists($key, $decoded) && $decoded[$key] !== $sentinel) {
+                $decoded[$key] = $sentinel;
+                $scrubbed = true;
+            }
+        }
+
+        if (!$scrubbed) {
+            return $metadata;
+        }
+
+        return json_encode($decoded, JSON_INVALID_UTF8_SUBSTITUTE);
     }
 }
