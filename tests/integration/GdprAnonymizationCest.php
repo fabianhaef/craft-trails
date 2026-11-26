@@ -12,12 +12,17 @@ use yii\db\Query;
 
 /**
  * GDPR Article 17 erasure must scrub PII from EVERY non-dropped partition
- * table — active + every monthly archive — not just the active table.
+ * table — active + every monthly archive — not just the active table, and
+ * from both the top-level userName/userEmail columns and the same user's
+ * own PII embedded in a row's JSON `metadata` context (written under
+ * `username`/`email` by AuthEventListener/SystemEventListener, or
+ * `actorUsername`/`actorEmail` by WorkflowEventListener).
  *
- * Failure mode this test catches: an active-table-only iteration leaves
- * archived rows containing the deleted user's userName/userEmail forever,
- * which is a regulator-relevant violation and contradicts the README's
- * "auto-anonymization on user deletion" claim.
+ * Failure modes this test catches: an active-table-only iteration leaves
+ * archived rows containing the deleted user's PII forever (a regulator-
+ * relevant violation contradicting the README's "auto-anonymization on
+ * user deletion" claim), and scrubbing only the top-level columns while
+ * leaving the identical PII sitting in `metadata` untouched.
  */
 class GdprAnonymizationCest
 {
@@ -72,8 +77,28 @@ class GdprAnonymizationCest
 
         // 3. Insert one row into the active table and one into the archive,
         //    both attributed to TEST_USER_ID with non-null userName/userEmail.
-        $activeRowId = $this->insertRowWithUserPii($db, '{{%trails_logs}}', $plugin, 'active@example.test', 'Active User');
-        $archiveRowId = $this->insertRowWithUserPii($db, self::ARCHIVE_TABLE, $plugin, 'archive@example.test', 'Archive User');
+        //    Each also carries the user's own PII inside its JSON `metadata`
+        //    context, under the two real shapes different listeners write it
+        //    under (AuthEventListener's `username`/`email`, WorkflowEventListener's
+        //    `actorUsername`/`actorEmail`) — the active row's metadata also
+        //    carries an unrelated `title` key, to prove the scrub is selective
+        //    rather than wiping the whole blob.
+        $activeRowId = $this->insertRowWithUserPii(
+            $db,
+            '{{%trails_logs}}',
+            $plugin,
+            'active@example.test',
+            'Active User',
+            ['username' => 'Active User', 'email' => 'active@example.test', 'title' => 'Some Entry'],
+        );
+        $archiveRowId = $this->insertRowWithUserPii(
+            $db,
+            self::ARCHIVE_TABLE,
+            $plugin,
+            'archive@example.test',
+            'Archive User',
+            ['actorUsername' => 'Archive User', 'actorEmail' => 'archive@example.test', 'runId' => 42],
+        );
         $this->activeRowIds[] = $activeRowId;
 
         // Sanity: pre-anonymization both rows have PII.
@@ -95,6 +120,19 @@ class GdprAnonymizationCest
         $I->assertSame('[deleted]', $archiveAfter['userName'], 'Archive row userName must be the deletion sentinel — this is the regression catch');
         $I->assertNull($archiveAfter['userEmail'], 'Archive row userEmail must be NULL — this is the regression catch');
 
+        // 5b. The PII embedded in each row's JSON `metadata` context must be
+        //     scrubbed too, under whichever key shape it was written with —
+        //     while any unrelated key in that same blob stays untouched.
+        $activeMetadata = json_decode((string) $activeAfter['metadata'], true);
+        $I->assertSame('[deleted]', $activeMetadata['username'], 'metadata.username must be the deletion sentinel');
+        $I->assertNull($activeMetadata['email'], 'metadata.email must be null');
+        $I->assertSame('Some Entry', $activeMetadata['title'], 'Unrelated metadata keys must survive the scrub');
+
+        $archiveMetadata = json_decode((string) $archiveAfter['metadata'], true);
+        $I->assertSame('[deleted]', $archiveMetadata['actorUsername'], 'metadata.actorUsername must be the deletion sentinel');
+        $I->assertNull($archiveMetadata['actorEmail'], 'metadata.actorEmail must be null');
+        $I->assertSame(42, $archiveMetadata['runId'], 'Unrelated metadata keys must survive the scrub');
+
         // 6. The new hash on each row must match the canonical recompute.
         $expectedActiveHash = $plugin->audit->hashRow($activeAfter);
         $expectedArchiveHash = $plugin->audit->hashRow($archiveAfter);
@@ -109,6 +147,8 @@ class GdprAnonymizationCest
     /**
      * Inserts a row with a known userId/email/name and a self-consistent v3 hash.
      * Returns the inserted row's id.
+     *
+     * @param array<string, mixed>|null $metadata
      */
     private function insertRowWithUserPii(
         $db,
@@ -116,6 +156,7 @@ class GdprAnonymizationCest
         Trails $plugin,
         string $email,
         string $userName,
+        ?array $metadata = null,
     ): int {
         $payload = [
             'event' => 'gdpr.smoketest',
@@ -136,7 +177,7 @@ class GdprAnonymizationCest
             'dateUpdated' => date('Y-m-d H:i:s'),
             'oldValue' => null,
             'newValue' => null,
-            'metadata' => null,
+            'metadata' => $metadata !== null ? json_encode($metadata) : null,
             'prevHash' => null,
             'uid' => sprintf('%08x-%04x-%04x-%04x-%012x',
                 random_int(0, 0xffffffff),
