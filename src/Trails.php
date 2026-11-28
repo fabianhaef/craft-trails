@@ -80,6 +80,7 @@ class Trails extends Plugin
         parent::init();
 
         Craft::setAlias('@trails', $this->getBasePath());
+        Craft::setAlias('@anvildev/trails', $this->getBasePath());
 
         $this->registerEventListeners();
         $this->eventBridge->bindAll();
